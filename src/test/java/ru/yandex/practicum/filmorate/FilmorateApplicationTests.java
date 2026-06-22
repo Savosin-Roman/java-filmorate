@@ -14,7 +14,6 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 
-import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Set;
@@ -24,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class FilmorateApplicationTests {
 
@@ -44,7 +43,7 @@ class FilmorateApplicationTests {
     void testValidFilm() {
         Film film = createValidFilm();
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
-        assertTrue(violations.isEmpty());
+        assertTrue(violations.isEmpty(), "Валидный фильм не должен иметь ошибок");
     }
 
     @Test
@@ -53,10 +52,16 @@ class FilmorateApplicationTests {
         film.setName("");
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
         assertFalse(violations.isEmpty());
+        assertEquals("Название не должно быть пустым", violations.iterator().next().getMessage());
+    }
 
-        boolean hasNameError = violations.stream()
-                .anyMatch(v -> v.getPropertyPath().toString().equals("name"));
-        assertTrue(hasNameError);
+    @Test
+    void testFilmNameNull() {
+        Film film = createValidFilm();
+        film.setName(null);
+        Set<ConstraintViolation<Film>> violations = validator.validate(film);
+        assertFalse(violations.isEmpty());
+        assertEquals("Название не должно быть пустым", violations.iterator().next().getMessage());
     }
 
     @Test
@@ -65,10 +70,24 @@ class FilmorateApplicationTests {
         film.setDescription("a".repeat(201));
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
         assertFalse(violations.isEmpty());
+        assertEquals("Длина описания должна быть не больше 200 символов",
+                violations.iterator().next().getMessage());
+    }
 
-        boolean hasDescriptionError = violations.stream()
-                .anyMatch(v -> v.getPropertyPath().toString().equals("description"));
-        assertTrue(hasDescriptionError);
+    @Test
+    void testFilmDescriptionMaxLength() {
+        Film film = createValidFilm();
+        film.setDescription("a".repeat(200));
+        Set<ConstraintViolation<Film>> violations = validator.validate(film);
+        assertTrue(violations.isEmpty(), "Описание длиной 200 символов должно проходить валидацию");
+    }
+
+    @Test
+    void testFilmDescriptionEmpty() {
+        Film film = createValidFilm();
+        film.setDescription("");
+        Set<ConstraintViolation<Film>> violations = validator.validate(film);
+        assertTrue(violations.isEmpty(), "Пустое описание допустимо");
     }
 
     @Test
@@ -77,10 +96,7 @@ class FilmorateApplicationTests {
         film.setReleaseDate(null);
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
         assertFalse(violations.isEmpty());
-
-        boolean hasDateError = violations.stream()
-                .anyMatch(v -> v.getPropertyPath().toString().equals("releaseDate"));
-        assertTrue(hasDateError);
+        assertEquals("Дата должна быть указана", violations.iterator().next().getMessage());
     }
 
     @Test
@@ -88,7 +104,7 @@ class FilmorateApplicationTests {
         Film film = createValidFilm();
         film.setDuration(null);
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
-        assertFalse(violations.isEmpty());
+        assertFalse(violations.isEmpty());  // ← теперь будет false (есть ошибка)
 
         boolean hasDurationError = violations.stream()
                 .anyMatch(v -> v.getPropertyPath().toString().equals("duration"));
@@ -98,31 +114,38 @@ class FilmorateApplicationTests {
     @Test
     void testFilmDurationZero() {
         Film film = createValidFilm();
-        film.setDuration(Duration.ZERO);
+        film.setDuration(0);
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
-
         assertFalse(violations.isEmpty());
-        assertEquals("Продолжительность фильма должна быть положительным числом",
+        assertEquals("Продолжительность должна быть положительным числом",
                 violations.iterator().next().getMessage());
     }
 
     @Test
     void testFilmDurationNegative() {
         Film film = createValidFilm();
-        film.setDuration(Duration.ofMinutes(-10));
+        film.setDuration(-10);
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
-
-        // Проверяем, что есть ошибка с нужным сообщением
         assertFalse(violations.isEmpty());
-        assertEquals("Продолжительность фильма должна быть положительным числом",
+        assertEquals("Продолжительность должна быть положительным числом",
                 violations.iterator().next().getMessage());
     }
+
+    @Test
+    void testFilmDurationPositive() {
+        Film film = createValidFilm();
+        film.setDuration(1);
+        Set<ConstraintViolation<Film>> violations = validator.validate(film);
+        assertTrue(violations.isEmpty(), "Продолжительность > 0 допустима");
+    }
+
+    // ==================== ТЕСТЫ МОДЕЛИ USER ====================
 
     @Test
     void testValidUser() {
         User user = createValidUser();
         Set<ConstraintViolation<User>> violations = validator.validate(user);
-        assertTrue(violations.isEmpty());
+        assertTrue(violations.isEmpty(), "Валидный пользователь не должен иметь ошибок");
     }
 
     @Test
@@ -131,10 +154,16 @@ class FilmorateApplicationTests {
         user.setEmail("");
         Set<ConstraintViolation<User>> violations = validator.validate(user);
         assertFalse(violations.isEmpty());
+        assertEquals("Email не может быть пустым", violations.iterator().next().getMessage());
+    }
 
-        boolean hasEmailError = violations.stream()
-                .anyMatch(v -> v.getPropertyPath().toString().equals("email"));
-        assertTrue(hasEmailError);
+    @Test
+    void testUserEmailNull() {
+        User user = createValidUser();
+        user.setEmail(null);
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        assertFalse(violations.isEmpty());
+        assertEquals("Email не может быть пустым", violations.iterator().next().getMessage());
     }
 
     @Test
@@ -143,10 +172,15 @@ class FilmorateApplicationTests {
         user.setEmail("invalid-email");
         Set<ConstraintViolation<User>> violations = validator.validate(user);
         assertFalse(violations.isEmpty());
+        assertEquals("Некорректный формат email", violations.iterator().next().getMessage());
+    }
 
-        boolean hasEmailError = violations.stream()
-                .anyMatch(v -> v.getPropertyPath().toString().equals("email"));
-        assertTrue(hasEmailError);
+    @Test
+    void testUserEmailValid() {
+        User user = createValidUser();
+        user.setEmail("user@mail.ru");
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        assertTrue(violations.isEmpty(), "Корректный email должен проходить валидацию");
     }
 
     @Test
@@ -156,7 +190,18 @@ class FilmorateApplicationTests {
         Set<ConstraintViolation<User>> violations = validator.validate(user);
         assertFalse(violations.isEmpty());
 
-        // Проверяем, что есть ошибка для поля login
+        boolean hasLoginError = violations.stream()
+                .anyMatch(v -> v.getPropertyPath().toString().equals("login"));
+        assertTrue(hasLoginError);
+    }
+
+    @Test
+    void testUserLoginNull() {
+        User user = createValidUser();
+        user.setLogin(null);
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        assertFalse(violations.isEmpty());
+
         boolean hasLoginError = violations.stream()
                 .anyMatch(v -> v.getPropertyPath().toString().equals("login"));
         assertTrue(hasLoginError);
@@ -168,10 +213,16 @@ class FilmorateApplicationTests {
         user.setLogin("user 123");
         Set<ConstraintViolation<User>> violations = validator.validate(user);
         assertFalse(violations.isEmpty());
+        assertEquals("Логин не должен содержать пробелы",
+                violations.iterator().next().getMessage());
+    }
 
-        boolean hasLoginError = violations.stream()
-                .anyMatch(v -> v.getPropertyPath().toString().equals("login"));
-        assertTrue(hasLoginError);
+    @Test
+    void testUserLoginValid() {
+        User user = createValidUser();
+        user.setLogin("user123");
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        assertTrue(violations.isEmpty(), "Корректный логин должен проходить валидацию");
     }
 
     @Test
@@ -180,10 +231,24 @@ class FilmorateApplicationTests {
         user.setBirthday(LocalDate.now().plusDays(1));
         Set<ConstraintViolation<User>> violations = validator.validate(user);
         assertFalse(violations.isEmpty());
+        assertEquals("Дата рождения не может быть в будущем",
+                violations.iterator().next().getMessage());
+    }
 
-        boolean hasBirthdayError = violations.stream()
-                .anyMatch(v -> v.getPropertyPath().toString().equals("birthday"));
-        assertTrue(hasBirthdayError);
+    @Test
+    void testUserBirthdayToday() {
+        User user = createValidUser();
+        user.setBirthday(LocalDate.now());
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        assertTrue(violations.isEmpty(), "Сегодняшняя дата допустима с @PastOrPresent");
+    }
+
+    @Test
+    void testUserBirthdayPast() {
+        User user = createValidUser();
+        user.setBirthday(LocalDate.of(1990, 1, 1));
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        assertTrue(violations.isEmpty(), "Прошлая дата допустима");
     }
 
     @Test
@@ -191,8 +256,17 @@ class FilmorateApplicationTests {
         User user = createValidUser();
         user.setName(null);
         Set<ConstraintViolation<User>> violations = validator.validate(user);
-        assertTrue(violations.isEmpty());
+        assertTrue(violations.isEmpty(), "Имя может быть null");
     }
+
+    @Test
+    void testUserNameCanBeEmpty() {
+        User user = createValidUser();
+        user.setName("");
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        assertTrue(violations.isEmpty(), "Имя может быть пустым");
+    }
+
 
     @Test
     void testCreateFilmSuccess() {
@@ -201,7 +275,9 @@ class FilmorateApplicationTests {
 
         assertNotNull(created.getId());
         assertEquals("Матрица", created.getName());
+        assertEquals("Фильм о реальности", created.getDescription());
         assertEquals(LocalDate.of(1999, 3, 31), created.getReleaseDate());
+        assertEquals(136, created.getDuration());
     }
 
     @Test
@@ -215,7 +291,23 @@ class FilmorateApplicationTests {
     }
 
     @Test
-    void testGetAllFilms() {
+    void testCreateFilmWithMinimumDate() {
+        Film film = createValidFilm();
+        film.setReleaseDate(LocalDate.of(1895, 12, 28));
+
+        Film created = filmController.create(film);
+        assertNotNull(created.getId());
+        assertEquals(LocalDate.of(1895, 12, 28), created.getReleaseDate());
+    }
+
+    @Test
+    void testGetAllFilmsEmpty() {
+        Collection<Film> allFilms = filmController.findAll();
+        assertTrue(allFilms.isEmpty(), "Изначально список фильмов должен быть пуст");
+    }
+
+    @Test
+    void testGetAllFilmsWithData() {
         Film film1 = createValidFilm();
         filmController.create(film1);
 
@@ -235,14 +327,16 @@ class FilmorateApplicationTests {
         Film updatedFilm = new Film();
         updatedFilm.setId(created.getId());
         updatedFilm.setName("Матрица 2");
-        updatedFilm.setDescription("Продолжение");
+        updatedFilm.setDescription("Продолжение культового фильма");
         updatedFilm.setReleaseDate(LocalDate.of(2003, 5, 15));
-        updatedFilm.setDuration(Duration.ofMinutes(138));
+        updatedFilm.setDuration(138);
 
         Film result = filmController.update(updatedFilm);
 
         assertEquals("Матрица 2", result.getName());
+        assertEquals("Продолжение культового фильма", result.getDescription());
         assertEquals(LocalDate.of(2003, 5, 15), result.getReleaseDate());
+        assertEquals(138, result.getDuration());
     }
 
     @Test
@@ -266,6 +360,27 @@ class FilmorateApplicationTests {
     }
 
     @Test
+    void testUpdateFilmWithoutId() {
+        Film film = createValidFilm();
+        film.setId(null);
+
+        assertThrows(ConditionsNotMetException.class, () -> {
+            filmController.update(film);
+        });
+    }
+
+    @Test
+    void testCreateMultipleFilmsWithUniqueIds() {
+        Film film1 = filmController.create(createValidFilm());
+        Film film2 = filmController.create(createValidFilm());
+        Film film3 = filmController.create(createValidFilm());
+
+        assertNotEquals(film1.getId(), film2.getId());
+        assertNotEquals(film2.getId(), film3.getId());
+        assertNotEquals(film1.getId(), film3.getId());
+    }
+
+    @Test
     void testCreateUserSuccess() {
         User user = createValidUser();
         User created = userController.create(user);
@@ -273,6 +388,8 @@ class FilmorateApplicationTests {
         assertNotNull(created.getId());
         assertEquals("user@mail.ru", created.getEmail());
         assertEquals("user123", created.getLogin());
+        assertEquals("Иван Петров", created.getName());
+        assertEquals(LocalDate.of(1990, 1, 1), created.getBirthday());
     }
 
     @Test
@@ -294,13 +411,29 @@ class FilmorateApplicationTests {
     }
 
     @Test
-    void testGetAllUsers() {
+    void testCreateUserWithName() {
+        User user = createValidUser();
+        user.setName("Пётр Сидоров");
+
+        User created = userController.create(user);
+        assertEquals("Пётр Сидоров", created.getName());
+    }
+
+    @Test
+    void testGetAllUsersEmpty() {
+        Collection<User> allUsers = userController.findAll();
+        assertTrue(allUsers.isEmpty(), "Изначально список пользователей должен быть пуст");
+    }
+
+    @Test
+    void testGetAllUsersWithData() {
         User user1 = createValidUser();
         userController.create(user1);
 
         User user2 = createValidUser();
         user2.setEmail("user2@mail.ru");
         user2.setLogin("user456");
+        user2.setName("Анна Иванова");
         userController.create(user2);
 
         Collection<User> allUsers = userController.findAll();
@@ -323,12 +456,22 @@ class FilmorateApplicationTests {
         assertEquals("new@mail.ru", result.getEmail());
         assertEquals("newlogin", result.getLogin());
         assertEquals("Новое имя", result.getName());
+        assertEquals(LocalDate.of(1995, 5, 5), result.getBirthday());
     }
 
     @Test
     void testUpdateUserWithEmptyName_ShouldSetLogin() {
         User created = userController.create(createValidUser());
         created.setName("");
+
+        User result = userController.update(created);
+        assertEquals("user123", result.getName());
+    }
+
+    @Test
+    void testUpdateUserWithNullName_ShouldSetLogin() {
+        User created = userController.create(createValidUser());
+        created.setName(null);
 
         User result = userController.update(created);
         assertEquals("user123", result.getName());
@@ -355,30 +498,105 @@ class FilmorateApplicationTests {
     }
 
     @Test
+    void testCreateMultipleUsersWithUniqueIds() {
+        User user1 = userController.create(createValidUser());
+        User user2 = userController.create(createValidUser());
+        User user3 = userController.create(createValidUser());
+
+        assertNotEquals(user1.getId(), user2.getId());
+        assertNotEquals(user2.getId(), user3.getId());
+        assertNotEquals(user1.getId(), user3.getId());
+    }
+
+
+    @Test
     void testFullFlow() {
+        // 1. Создаём фильм
         Film film = new Film();
         film.setName("Интерстеллар");
-        film.setDescription("Космическая эпопея");
+        film.setDescription("Космическая эпопея Кристофера Нолана");
         film.setReleaseDate(LocalDate.of(2014, 11, 7));
-        film.setDuration(Duration.ofMinutes(169));
+        film.setDuration(169);
 
         Film createdFilm = filmController.create(film);
         assertNotNull(createdFilm.getId());
+        assertEquals("Интерстеллар", createdFilm.getName());
 
+        // 2. Проверяем, что фильм сохранился в списке
         Collection<Film> allFilms = filmController.findAll();
         assertEquals(1, allFilms.size());
+        assertEquals("Интерстеллар", allFilms.iterator().next().getName());
 
+        // 3. Создаём пользователя
         User user = new User();
-        user.setEmail("user@example.com");
-        user.setLogin("spaceman");
+        user.setEmail("cooper@nasa.gov");
+        user.setLogin("cooper");
         user.setName("Купер");
         user.setBirthday(LocalDate.of(1970, 1, 1));
 
         User createdUser = userController.create(user);
         assertNotNull(createdUser.getId());
+        assertEquals("cooper", createdUser.getLogin());
 
+        // 4. Проверяем, что пользователь сохранился в списке
         Collection<User> allUsers = userController.findAll();
         assertEquals(1, allUsers.size());
+        assertEquals("cooper", allUsers.iterator().next().getLogin());
+
+        // 5. Обновляем фильм
+        createdFilm.setName("Интерстеллар: Перезагрузка");
+        createdFilm.setDuration(170);
+        Film updatedFilm = filmController.update(createdFilm);
+        assertEquals("Интерстеллар: Перезагрузка", updatedFilm.getName());
+        assertEquals(170, updatedFilm.getDuration());
+
+        // 6. Обновляем пользователя
+        createdUser.setEmail("cooper@interstellar.com");
+        createdUser.setName("Купер (обновлён)");
+        User updatedUser = userController.update(createdUser);
+        assertEquals("cooper@interstellar.com", updatedUser.getEmail());
+        assertEquals("Купер (обновлён)", updatedUser.getName());
+
+        // 7. Проверяем финальное состояние
+        Collection<Film> finalFilms = filmController.findAll();
+        Collection<User> finalUsers = userController.findAll();
+
+        assertEquals(1, finalFilms.size());
+        assertEquals(1, finalUsers.size());
+        assertEquals("Интерстеллар: Перезагрузка", finalFilms.iterator().next().getName());
+        assertEquals("cooper@interstellar.com", finalUsers.iterator().next().getEmail());
+    }
+
+    @Test
+    void testFilmWithMaxDescriptionLength() {
+        Film film = createValidFilm();
+        film.setDescription("a".repeat(200));
+        Film created = filmController.create(film);
+        assertEquals(200, created.getDescription().length());
+    }
+
+    @Test
+    void testFilmWithVeryLongName() {
+        Film film = createValidFilm();
+        film.setName("a".repeat(1000));
+        Film created = filmController.create(film);
+        assertEquals(1000, created.getName().length());
+    }
+
+    @Test
+    void testUserWithVeryLongLogin() {
+        User user = createValidUser();
+        user.setLogin("a".repeat(100));
+        User created = userController.create(user);
+        assertEquals(100, created.getLogin().length());
+    }
+
+    @Test
+    void testUserWithVeryLongName() {
+        User user = createValidUser();
+        user.setName("a".repeat(100));
+        User created = userController.create(user);
+        assertEquals(100, created.getName().length());
     }
 
     private Film createValidFilm() {
@@ -386,7 +604,7 @@ class FilmorateApplicationTests {
         film.setName("Матрица");
         film.setDescription("Фильм о реальности");
         film.setReleaseDate(LocalDate.of(1999, 3, 31));
-        film.setDuration(Duration.ofMinutes(136));
+        film.setDuration(136);
         return film;
     }
 

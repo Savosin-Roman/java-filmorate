@@ -13,7 +13,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-@Slf4j  // ← Добавить
+@Slf4j
 @RestController
 @RequestMapping("/films")
 public class FilmController {

@@ -1,9 +1,6 @@
 package ru.yandex.practicum.filmorate.model;
 
-import jakarta.validation.constraints.AssertTrue;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
 import java.time.Duration;
@@ -23,10 +20,6 @@ public class Film {
     private LocalDate releaseDate;
 
     @NotNull(message = "Продолжительность должна быть указана")
-    private Duration duration;
-
-    @AssertTrue(message = "Продолжительность фильма должна быть положительным числом")
-    private boolean isDurationPositive() {
-        return duration != null && duration.isPositive();
-    }
+    @Positive(message = "Продолжительность должна быть положительным числом")
+    private Integer duration;  // ← продолжительность в минутах
 }
