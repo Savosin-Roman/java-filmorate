@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.controller.FilmController;
 import ru.yandex.practicum.filmorate.controller.UserController;
 import ru.yandex.practicum.filmorate.exception.ConditionsNotMetException;
-import ru.yandex.practicum.filmorate.exception.DateValidationException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
@@ -138,8 +137,6 @@ class FilmorateApplicationTests {
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
         assertTrue(violations.isEmpty(), "Продолжительность > 0 допустима");
     }
-
-    // ==================== ТЕСТЫ МОДЕЛИ USER ====================
 
     @Test
     void testValidUser() {
@@ -281,16 +278,6 @@ class FilmorateApplicationTests {
     }
 
     @Test
-    void testCreateFilmWithInvalidDate() {
-        Film film = createValidFilm();
-        film.setReleaseDate(LocalDate.of(1890, 1, 1));
-
-        assertThrows(DateValidationException.class, () -> {
-            filmController.create(film);
-        });
-    }
-
-    @Test
     void testCreateFilmWithMinimumDate() {
         Film film = createValidFilm();
         film.setReleaseDate(LocalDate.of(1895, 12, 28));
@@ -346,16 +333,6 @@ class FilmorateApplicationTests {
 
         assertThrows(NotFoundException.class, () -> {
             filmController.update(film);
-        });
-    }
-
-    @Test
-    void testUpdateFilmWithInvalidDate() {
-        Film created = filmController.create(createValidFilm());
-        created.setReleaseDate(LocalDate.of(1890, 1, 1));
-
-        assertThrows(DateValidationException.class, () -> {
-            filmController.update(created);
         });
     }
 

@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.model;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import ru.yandex.practicum.filmorate.validation.DateRange;
 
 import java.time.LocalDate;
 
@@ -16,6 +17,7 @@ public class Film {
     private String description;
 
     @NotNull(message = "Дата должна быть указана")
+    @DateRange(min = "1895-12-28", message = "Дата выхода не может быть раньше {min}")
     private LocalDate releaseDate;
 
     @NotNull(message = "Продолжительность должна быть указана")

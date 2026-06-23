@@ -2,13 +2,17 @@ package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.*;
+
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import ru.yandex.practicum.filmorate.exception.ConditionsNotMetException;
-import ru.yandex.practicum.filmorate.exception.DateValidationException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,16 +23,10 @@ import java.util.Map;
 public class FilmController {
 
     private final Map<Long, Film> films = new HashMap<>();
-    private static final LocalDate MIN_DATE = LocalDate.of(1895, 12, 28);
 
     @PostMapping
     public Film create(@Valid @RequestBody Film film) {
         log.info("Создание нового фильма: {}", film.getName());
-
-        if (film.getReleaseDate().isBefore(MIN_DATE)) {
-            log.warn("Попытка создания фильма с невалидной датой: {}", film.getReleaseDate());
-            throw new DateValidationException();
-        }
 
         film.setId(getNextId());
         films.put(film.getId(), film);
@@ -50,11 +48,6 @@ public class FilmController {
         if (oldFilm == null) {
             log.warn("Фильм с ID {} не найден", newFilm.getId());
             throw new NotFoundException("Фильм с ID " + newFilm.getId() + " не найден");
-        }
-
-        if (newFilm.getReleaseDate().isBefore(MIN_DATE)) {
-            log.warn("Попытка обновления с невалидной датой: {}", newFilm.getReleaseDate());
-            throw new DateValidationException();
         }
 
         oldFilm.setName(newFilm.getName());
