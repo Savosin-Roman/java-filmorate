@@ -16,7 +16,7 @@ import java.util.Set;
 @NoArgsConstructor
 public class User {
     private Long id;
-    private Set<Long> friends  = new HashSet<>();;
+    private Set<Long> friends  = new HashSet<>();
 
     @NotBlank(message = "Email не может быть пустым")
     @Email(message = "Некорректный формат email")
