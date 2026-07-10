@@ -12,7 +12,7 @@ public interface UserStorage {
     User findById(Long id);
 
     void delete(Long id);
-    
+
     List<User> findAll();
 
 }
