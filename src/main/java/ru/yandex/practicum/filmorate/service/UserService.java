@@ -75,7 +75,8 @@ public class UserService {
         User friend = userStorage.findById(friendId);
 
         if (!user.getFriends().contains(friendId)) {
-            throw new ConditionsNotMetException("Такого пользователя нет в друзьях");
+            log.warn("Пользователь {} не является другом {}", friendId, userId);
+            return;
         }
 
         user.getFriends().remove(friendId);
@@ -84,7 +85,7 @@ public class UserService {
         userStorage.update(user);
         userStorage.update(friend);
 
-        log.info("пользователь {} и {} больше не друзья", userId, friendId);
+        log.info("Пользователь {} и {} больше не друзья", userId, friendId);
     }
 
     public List<User> getFriends(Long userId) {
@@ -99,7 +100,9 @@ public class UserService {
         }
 
         List<User> friends = friendIds.stream()
-                .map(userStorage::findById)
+                .map(id -> {
+                    return userStorage.findById(id);
+                })
                 .collect(Collectors.toList());
 
         log.info("Найдено {} друзей у пользователя {}", friends.size(), userId);
@@ -117,7 +120,7 @@ public class UserService {
 
         if (commonFriendIds.isEmpty()) {
             log.info("Общих друзей у пользователей {} и {} нет", userId, otherUserId);
-            return Collections.emptyList();  //
+            return Collections.emptyList();
         }
 
         List<User> commonFriends = commonFriendIds.stream()
