@@ -12,30 +12,39 @@ import ru.yandex.practicum.filmorate.exception.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
+import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 class FilmorateApplicationTests {
 
     private Validator validator;
     private FilmController filmController;
     private UserController userController;
+    private FilmService filmService;
+    private UserService userService;
 
     @BeforeEach
     void setUp() {
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         validator = factory.getValidator();
-        filmController = new FilmController();
-        userController = new UserController();
+
+        // ✅ ИСПРАВЛЕНО: Создаем зависимости и передаем их в контроллеры
+        InMemoryFilmStorage filmStorage = new InMemoryFilmStorage();
+        InMemoryUserStorage userStorage = new InMemoryUserStorage();
+
+        filmService = new FilmService(filmStorage, userStorage);
+        userService = new UserService(userStorage);
+
+        filmController = new FilmController(filmService);
+        userController = new UserController(userService);
     }
 
     @Test
@@ -103,7 +112,7 @@ class FilmorateApplicationTests {
         Film film = createValidFilm();
         film.setDuration(null);
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
-        assertFalse(violations.isEmpty());  // ← теперь будет false (есть ошибка)
+        assertFalse(violations.isEmpty());
 
         boolean hasDurationError = violations.stream()
                 .anyMatch(v -> v.getPropertyPath().toString().equals("duration"));
@@ -263,7 +272,6 @@ class FilmorateApplicationTests {
         Set<ConstraintViolation<User>> violations = validator.validate(user);
         assertTrue(violations.isEmpty(), "Имя может быть пустым");
     }
-
 
     @Test
     void testCreateFilmSuccess() {
@@ -484,7 +492,6 @@ class FilmorateApplicationTests {
         assertNotEquals(user2.getId(), user3.getId());
         assertNotEquals(user1.getId(), user3.getId());
     }
-
 
     @Test
     void testFullFlow() {
