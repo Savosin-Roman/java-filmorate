@@ -45,13 +45,11 @@ public class FilmService {
         return filmStorage.findAll();
     }
 
-    // Методы для работы с лайками
     public void addLike(Long filmId, Long userId) {
         log.info("Пользователь {} ставит лайк фильму {}", userId, filmId);
 
-        // Проверяем существование фильма и пользователя
         Film film = filmStorage.findById(filmId);
-        userStorage.findById(userId); // Проверка существования пользователя
+        userStorage.findById(userId);
 
         if (film.getLikes().contains(userId)) {
             log.warn("Пользователь {} уже поставил лайк фильму {}", userId, filmId);
@@ -65,9 +63,8 @@ public class FilmService {
     public void removeLike(Long filmId, Long userId) {
         log.info("Пользователь {} убирает лайк у фильма {}", userId, filmId);
 
-        // Проверяем существование фильма и пользователя
         Film film = filmStorage.findById(filmId);
-        userStorage.findById(userId); // Проверка существования пользователя
+        userStorage.findById(userId);
 
         if (!film.getLikes().contains(userId)) {
             log.warn("Пользователь {} не ставил лайк фильму {}", userId, filmId);

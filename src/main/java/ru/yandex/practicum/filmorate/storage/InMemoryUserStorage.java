@@ -44,24 +44,26 @@ public class InMemoryUserStorage implements UserStorage {
             throw new ConditionsNotMetException("Id должен быть указан");
         }
 
-        User oldUser = users.get(newUser.getId());
-        if (oldUser == null) {
+        User existingUser = users.get(newUser.getId());
+        if (existingUser == null) {
             log.warn("Пользователь с ID {} не найден", newUser.getId());
             throw new NotFoundException("Пользователь с ID " + newUser.getId() + " не найден");
         }
 
-        oldUser.setEmail(newUser.getEmail());
-        oldUser.setLogin(newUser.getLogin());
-        oldUser.setBirthday(newUser.getBirthday());
+        existingUser.setLogin(newUser.getLogin());
+        existingUser.setEmail(newUser.getEmail());
+        existingUser.setBirthday(newUser.getBirthday());
 
         if (newUser.getName() == null || newUser.getName().isBlank()) {
-            oldUser.setName(newUser.getLogin());
+            existingUser.setName(newUser.getLogin());
         } else {
-            oldUser.setName(newUser.getName());
+            existingUser.setName(newUser.getName());
         }
 
+        existingUser.setFriends(newUser.getFriends());
+
         log.info("Пользователь с ID {} успешно обновлён", newUser.getId());
-        return new User(oldUser);
+        return new User(existingUser);
     }
 
     @Override
