@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.MPA;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
@@ -22,12 +24,36 @@ public class FilmService {
 
     public Film create(Film film) {
         log.info("Создание нового фильма: {}", film.getName());
+        validateFilm(film);
         return filmStorage.create(film);
     }
 
     public Film update(Film film) {
         log.info("Обновление фильма с ID: {}", film.getId());
+        validateFilm(film);
         return filmStorage.update(film);
+    }
+
+    private void validateFilm(Film film) {
+
+        if (film.getGenre() != null && !film.getGenre().isEmpty()) {
+            for (Genre genre : film.getGenre()) {
+                if (genre == null) {
+                    throw new ConditionsNotMetException("Некорректный жанр фильма");
+                }
+            }
+        }
+
+        if (film.getMpa() == null) {
+            throw new ConditionsNotMetException("MPA рейтинг должен быть указан");
+        }
+
+        // Проверка, что MPA валидный
+        try {
+            MPA.valueOf(film.getMpa().name());
+        } catch (IllegalArgumentException e) {
+            throw new ConditionsNotMetException("Некорректный MPA рейтинг: " + film.getMpa());
+        }
     }
 
     public Film findById(Long id) {

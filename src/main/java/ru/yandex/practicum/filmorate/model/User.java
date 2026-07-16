@@ -17,6 +17,7 @@ import java.util.Set;
 public class User {
     private Long id;
     private Set<Long> friends  = new HashSet<>();
+    private Set<Long> friendRequests = new HashSet<>();
 
     @NotBlank(message = "Email не может быть пустым")
     @Email(message = "Некорректный формат email")
@@ -42,5 +43,44 @@ public class User {
         } else {
             this.friends = new HashSet<>();
         }
+        if (other.friendRequests != null) {
+            this.friendRequests = new HashSet<>(other.friendRequests);
+        } else {
+            this.friendRequests = new HashSet<>();
+        }
+    }
+
+    public void addFriend(Long friendId) {
+        if (friends == null) {
+            friends = new HashSet<>();
+        }
+        friends.add(friendId);
+    }
+
+    public void removeFriend(Long friendId) {
+        if (friends != null) {
+            friends.remove(friendId);
+        }
+    }
+
+    public boolean isFriend(Long userId) {
+        return friends != null && friends.contains(userId);
+    }
+
+    public void addFriendRequest(Long userId) {
+        if (friendRequests == null) {
+            friendRequests = new HashSet<>();
+        }
+        friendRequests.add(userId);
+    }
+
+    public void removeFriendRequest(Long userId) {
+        if (friendRequests != null) {
+            friendRequests.remove(userId);
+        }
+    }
+
+    public boolean hasFriendRequestFrom(Long userId) {
+        return friendRequests != null && friendRequests.contains(userId);
     }
 }

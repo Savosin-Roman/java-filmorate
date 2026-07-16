@@ -30,6 +30,10 @@ public class Film {
 
     private Set<Long> likes = new HashSet<>();
 
+    private Set<Genre> genre = new HashSet<>();
+
+    private MPA mpa;
+
     public Film(Film other) {
         this.id = other.id;
         this.name = other.name;

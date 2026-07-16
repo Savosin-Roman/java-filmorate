@@ -7,6 +7,7 @@ import ru.yandex.practicum.filmorate.model.User;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -30,6 +31,15 @@ public class InMemoryUserStorage implements UserStorage {
             user.setName(user.getLogin());
             log.debug("Имя пользователя установлено как логин: {}", user.getLogin());
         }
+
+        // Инициализируем коллекции, если они null
+        if (user.getFriends() == null) {
+            user.setFriends(new HashSet<>());
+        }
+        if (user.getFriendRequests() == null) {
+            user.setFriendRequests(new HashSet<>());
+        }
+
         users.put(user.getId(), user);
         log.info("Пользователь создан с ID: {}", user.getId());
         return new User(user);
@@ -60,7 +70,13 @@ public class InMemoryUserStorage implements UserStorage {
             existingUser.setName(newUser.getName());
         }
 
-        existingUser.setFriends(newUser.getFriends());
+        // Обновляем друзей и запросы, если они были переданы
+        if (newUser.getFriends() != null) {
+            existingUser.setFriends(new HashSet<>(newUser.getFriends())); // Создаем копию
+        }
+        if (newUser.getFriendRequests() != null) {
+            existingUser.setFriendRequests(new HashSet<>(newUser.getFriendRequests())); // Создаем копию
+        }
 
         log.info("Пользователь с ID {} успешно обновлён", newUser.getId());
         return new User(existingUser);

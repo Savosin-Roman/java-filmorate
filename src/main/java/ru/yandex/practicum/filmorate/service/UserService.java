@@ -32,12 +32,25 @@ public class UserService {
 
     public User create(User user) {
         log.info("Создание пользователя: {}", user.getLogin());
+        validateUser(user);
         return userStorage.create(user);
     }
 
     public User update(User user) {
         log.info("Обновление пользователя с ID: {}", user.getId());
+        validateUser(user);
         return userStorage.update(user);
+    }
+
+    private void validateUser(User user) {
+
+        if (user.getLogin() != null && user.getLogin().contains(" ")) {
+            throw new ConditionsNotMetException("Логин не должен содержать пробелы");
+        }
+
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
     }
 
     public void delete(Long id) {
@@ -55,17 +68,30 @@ public class UserService {
             throw new ConditionsNotMetException("Нельзя добавить себя в друзья");
         }
 
+        // Проверяем, есть ли уже запрос в друзья
+        if (friend.hasFriendRequestFrom(userId)) {
+            // Если есть запрос, автоматически подтверждаем дружбу
+            user.addFriend(friendId);
+            friend.addFriend(userId);
+            friend.removeFriendRequest(userId);
+
+            userStorage.update(user);
+            userStorage.update(friend);
+
+            log.info("Пользователь {} и {} стали друзьями (запрос подтвержден)", userId, friendId);
+            return;
+        }
+
+        // Если уже друзья
         if (user.getFriends().contains(friendId)) {
             throw new ConditionsNotMetException("Уже друзья");
         }
 
-        user.getFriends().add(friendId);
-        friend.getFriends().add(userId);
-
-        userStorage.update(user);
+        // Отправляем запрос в друзья
+        friend.addFriendRequest(userId);
         userStorage.update(friend);
 
-        log.info("Пользователь {} и {} друзья", userId, friendId);
+        log.info("Пользователь {} отправил запрос в друзья пользователю {}", userId, friendId);
     }
 
     public void removeFriend(Long userId, Long friendId) {
@@ -76,11 +102,14 @@ public class UserService {
 
         if (!user.getFriends().contains(friendId)) {
             log.warn("Пользователь {} не является другом {}", friendId, userId);
-            return;
+            throw new ConditionsNotMetException("Пользователь не является другом");
         }
 
         user.getFriends().remove(friendId);
         friend.getFriends().remove(userId);
+
+        user.removeFriendRequest(friendId);
+        friend.removeFriendRequest(userId);
 
         userStorage.update(user);
         userStorage.update(friend);
@@ -100,9 +129,7 @@ public class UserService {
         }
 
         List<User> friends = friendIds.stream()
-                .map(id -> {
-                    return userStorage.findById(id);
-                })
+                .map(userStorage::findById)
                 .collect(Collectors.toList());
 
         log.info("Найдено {} друзей у пользователя {}", friends.size(), userId);
@@ -127,8 +154,7 @@ public class UserService {
                 .map(userStorage::findById)
                 .collect(Collectors.toList());
 
-        log.info("Получен список общих друзей {} и {}: {}", userId, otherUserId, commonFriends);
+        log.info("Найдено {} общих друзей у пользователей {} и {}", commonFriends.size(), userId, otherUserId);
         return commonFriends;
     }
 }
-
