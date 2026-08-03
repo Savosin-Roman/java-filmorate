@@ -49,7 +49,7 @@ public class JdbcFriendDbStorage implements FriendDbStorage {
             throw new ConditionsNotMetException("Заявка уже отправлена");
         }
 
-        String sql = "INSERT INTO friends (user_id, friend_id, confirmed) VALUES (?, ?, FALSE)";
+        String sql = "INSERT INTO friends (user_id, friend_id, confirmed) VALUES (?, ?, TRUE)";
         jdbc.update(sql, userId, friendId);
 
         log.info("Заявка в друзья создана: {} -> {}", userId, friendId);
