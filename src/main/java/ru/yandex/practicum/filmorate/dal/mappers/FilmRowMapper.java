@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.dal.mappers;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -8,6 +9,7 @@ import ru.yandex.practicum.filmorate.model.Mpa;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+@Slf4j
 @Component
 public class FilmRowMapper implements RowMapper<Film> {
 
@@ -28,11 +30,12 @@ public class FilmRowMapper implements RowMapper<Film> {
                 try {
                     mpa.setName(rs.getString("mpa_name"));
                 } catch (SQLException e) {
+                    log.debug("mpa_name не найден", e);
                 }
                 film.setMpa(mpa);
             }
         } catch (SQLException e) {
-
+            log.debug("mpa_id не найден", e);
         }
 
         return film;
