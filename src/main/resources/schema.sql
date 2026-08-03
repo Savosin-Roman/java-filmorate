@@ -78,7 +78,7 @@ WHERE NOT EXISTS (SELECT 1 FROM mpa_ratings WHERE mpa_name = vals.name);
 -- Вставляем жанры только если их нет
 INSERT INTO genres (genre_name)
 SELECT * FROM (VALUES
-    ('COMEDY'), ('DRAMA'), ('CARTOON'),
-    ('THRILLER'), ('DOCUMENTARY'), ('ACTION_MOVIE')
+    ('Комедия'), ('Драма'), ('Мультфильм'),
+    ('Триллер'), ('Документальный'), ('Боевик')
 ) AS vals(name)
 WHERE NOT EXISTS (SELECT 1 FROM genres WHERE genre_name = vals.name);
