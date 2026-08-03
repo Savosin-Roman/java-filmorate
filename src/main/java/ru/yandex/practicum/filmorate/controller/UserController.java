@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
-import java.util.Collection;
 import java.util.List;
 
 @Slf4j
@@ -17,10 +16,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserService userService;
+    private final UserService userService;  // ← Используем сервис
 
     @GetMapping
-    public Collection<User> findAll() {
+    public List<User> findAll() {
         log.info("GET /users - получение всех пользователей");
         return userService.findAll();
     }
@@ -32,14 +31,25 @@ public class UserController {
     }
 
     @GetMapping("/{id}/friends")
+    @ResponseStatus(HttpStatus.OK)
     public List<User> getFriends(@PathVariable Long id) {
-        log.info("GET /users/{}/friends - получение списка друзей пользователя {}", id, id);
+        log.info("GET /users/{}/friends - получение друзей пользователя", id);
         return userService.getFriends(id);
     }
 
+    @GetMapping("/{id}/friends/pending")
+    @ResponseStatus(HttpStatus.OK)
+    public List<User> getPendingRequests(@PathVariable Long id) {
+        log.info("GET /users/{}/friends/pending - получение заявок в друзья", id);
+        return userService.getPendingRequests(id);
+    }
+
     @GetMapping("/{id}/friends/common/{otherId}")
-    public List<User> getCommonFriends(@PathVariable Long id, @PathVariable Long otherId) {
-        log.info("GET /users/{}/friends/common/{} - получение общих друзей пользователей {} и {}", id, otherId, id, otherId);
+    @ResponseStatus(HttpStatus.OK)
+    public List<User> getCommonFriends(
+            @PathVariable Long id,
+            @PathVariable Long otherId) {
+        log.info("GET /users/{}/friends/common/{} - получение общих друзей", id, otherId);
         return userService.getCommonFriends(id, otherId);
     }
 
@@ -75,5 +85,12 @@ public class UserController {
     public void removeFriend(@PathVariable Long id, @PathVariable Long friendId) {
         log.info("DELETE /users/{}/friends/{} - удаление пользователя {} из друзей у {}", id, friendId, friendId, id);
         userService.removeFriend(id, friendId);
+    }
+
+    @PutMapping("/{id}/friends/{friendId}/confirm")
+    @ResponseStatus(HttpStatus.OK)
+    public void confirmFriend(@PathVariable Long id, @PathVariable Long friendId) {
+        log.info("PUT /users/{}/friends/{}/confirm - подтверждение дружбы", id, friendId);
+        userService.confirmFriend(id, friendId);
     }
 }

@@ -16,7 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FilmController {
 
-    private final FilmService filmService;
+    private final FilmService filmService;  // ← Используем сервис
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -50,7 +50,6 @@ public class FilmController {
         filmService.delete(id);
     }
 
-    // Эндпоинты для работы с лайками
     @PutMapping("/{id}/like/{userId}")
     @ResponseStatus(HttpStatus.OK)
     public void addLike(@PathVariable Long id, @PathVariable Long userId) {
@@ -67,8 +66,8 @@ public class FilmController {
 
     @GetMapping("/popular")
     @ResponseStatus(HttpStatus.OK)
-    public List<Film> getPopular(@RequestParam(defaultValue = "10") Integer count) {
-        log.info("GET /films/popular - получение {} популярных фильмов", count);
-        return filmService.getPopularFilms(count);
+    public List<Film> getPopular(@RequestParam(defaultValue = "10") int count) {
+        log.info("GET /films/popular?count={} - получение популярных фильмов", count);
+        return filmService.getPopular(count);
     }
 }
