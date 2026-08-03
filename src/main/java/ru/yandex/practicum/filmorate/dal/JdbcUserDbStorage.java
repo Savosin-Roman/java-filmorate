@@ -157,6 +157,7 @@ public class JdbcUserDbStorage implements UserDbStorage {
 
         return jdbc.query(sql, userRowMapper, userId1, userId2);
     }
+
     @Override
     public Optional<User> findUserById(Long id) {
         log.debug("Поиск пользователя с ID: {}", id);
