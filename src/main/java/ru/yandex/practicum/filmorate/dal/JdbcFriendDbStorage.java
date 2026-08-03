@@ -49,7 +49,7 @@ public class JdbcFriendDbStorage implements FriendDbStorage {
             throw new ConditionsNotMetException("Заявка уже отправлена");
         }
 
-        String sql = "INSERT INTO friends (user_id, friend_id, confirmed) VALUES (?, ?, FALSE)";
+        String sql = "INSERT INTO friends (user_id, friend_id, confirmed) VALUES (?, ?, TRUE)";
         jdbc.update(sql, userId, friendId);
 
         log.info("Заявка в друзья создана: {} -> {}", userId, friendId);
@@ -72,7 +72,7 @@ public class JdbcFriendDbStorage implements FriendDbStorage {
         String updateSql = "UPDATE friends SET confirmed = TRUE WHERE user_id = ? AND friend_id = ?";
         jdbc.update(updateSql, userId, friendId);
 
-        String insertReverseSql = "INSERT INTO friends (user_id, friend_id, confirmed) VALUES (?, ?, TRUE)";
+        String insertReverseSql = "INSERT INTO friends (user_id, friend_id, confirmed) VALUES (?, ?, FALSE)";
         jdbc.update(insertReverseSql, friendId, userId);
 
         log.info("Дружба подтверждена между {} и {}", userId, friendId);
