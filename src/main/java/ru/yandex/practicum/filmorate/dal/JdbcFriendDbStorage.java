@@ -84,13 +84,13 @@ public class JdbcFriendDbStorage implements FriendDbStorage {
         userStorage.findById(userId);
         userStorage.findById(friendId);
 
-        String sql = "DELETE FROM friends WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)";
-        int rowsDeleted = jdbc.update(sql, userId, friendId, friendId, userId);
+        String sql = "DELETE FROM friends WHERE user_id = ? AND friend_id = ?";
+        int rowsDeleted = jdbc.update(sql, userId, friendId);
 
         if (rowsDeleted == 0) {
             log.warn("Дружба не найдена между {} и {}", userId, friendId);
         } else {
-            log.info("Дружба удалена между {} и {}", userId, friendId);
+            log.info("Дружба удалена у {} с {}", userId, friendId);
         }
     }
 
