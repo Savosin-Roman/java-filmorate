@@ -100,7 +100,7 @@ public class JdbcFriendDbStorage implements FriendDbStorage {
 
         String sql = "SELECT u.* FROM users u " +
                 "JOIN friends f ON u.user_id = f.friend_id " +
-                "WHERE f.user_id = ? AND f.confirmed = TRUE";
+                "WHERE f.user_id = ?";
 
         return jdbc.query(sql, userRowMapper, userId);
     }
