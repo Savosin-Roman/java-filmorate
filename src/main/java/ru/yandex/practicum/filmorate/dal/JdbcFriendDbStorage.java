@@ -62,7 +62,7 @@ public class JdbcFriendDbStorage implements FriendDbStorage {
         userStorage.findById(userId);
         userStorage.findById(friendId);
 
-        String checkSql = "SELECT COUNT(*) FROM friends WHERE user_id = ? AND friend_id = ? AND confirmed = FALSE";
+        String checkSql = "SELECT COUNT(*) FROM friends WHERE user_id = ? AND friend_id = ? AND confirmed = TRUE";
         Integer count = jdbc.queryForObject(checkSql, Integer.class, userId, friendId);
 
         if (count == null || count == 0) {
