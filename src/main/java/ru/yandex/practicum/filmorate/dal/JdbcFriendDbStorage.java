@@ -34,7 +34,7 @@ public class JdbcFriendDbStorage implements FriendDbStorage {
             throw new ConditionsNotMetException("Пользователи уже являются друзьями");
         }
 
-        String checkReverseSql = "SELECT COUNT(*) FROM friends WHERE user_id = ? AND friend_id = ? AND confirmed = FALSE";
+        String checkReverseSql = "SELECT COUNT(*) FROM friends WHERE user_id = ? AND friend_id = ? AND confirmed = TRUE";
         Integer reverseCount = jdbc.queryForObject(checkReverseSql, Integer.class, friendId, userId);
 
         if (reverseCount != null && reverseCount > 0) {
