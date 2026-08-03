@@ -30,16 +30,28 @@ public class JdbcFriendDbStorage implements FriendDbStorage {
             throw new ConditionsNotMetException("Нельзя добавить самого себя в друзья");
         }
 
-        // Проверяем, не друзья ли уже
         if (areFriends(userId, friendId)) {
             throw new ConditionsNotMetException("Пользователи уже являются друзьями");
         }
 
-        String sql = "INSERT INTO friends (user_id, friend_id, confirmed) VALUES (?, ?, TRUE)";
-        jdbc.update(sql, userId, friendId);
-        jdbc.update(sql, friendId, userId);
+        String checkSql = "SELECT COUNT(*) FROM friends WHERE user_id = ? AND friend_id = ? AND confirmed = FALSE";
+        Integer pendingRequestCount = jdbc.queryForObject(checkSql, Integer.class, friendId, userId);
 
-        log.info("Пользователи {} и {} стали друзьями", userId, friendId);
+        if (pendingRequestCount != null && pendingRequestCount > 0) {
+            confirmFriend(friendId, userId);
+            return;
+        }
+
+        String checkExistingSql = "SELECT COUNT(*) FROM friends WHERE user_id = ? AND friend_id = ?";
+        Integer existingCount = jdbc.queryForObject(checkExistingSql, Integer.class, userId, friendId);
+        if (existingCount != null && existingCount > 0) {
+            throw new ConditionsNotMetException("Заявка уже отправлена");
+        }
+
+        String sql = "INSERT INTO friends (user_id, friend_id, confirmed) VALUES (?, ?, FALSE)";
+        jdbc.update(sql, userId, friendId);
+
+        log.info("Заявка в друзья создана: {} -> {}", userId, friendId);
     }
 
     @Override
@@ -49,17 +61,18 @@ public class JdbcFriendDbStorage implements FriendDbStorage {
         userStorage.findById(userId);
         userStorage.findById(friendId);
 
-        String sql = "UPDATE friends SET confirmed = TRUE WHERE user_id = ? AND friend_id = ?";
-        int updated = jdbc.update(sql, userId, friendId);
+        String checkSql = "SELECT COUNT(*) FROM friends WHERE user_id = ? AND friend_id = ? AND confirmed = FALSE";
+        Integer count = jdbc.queryForObject(checkSql, Integer.class, userId, friendId);
 
-        if (updated == 0) {
-            String insertSql = "INSERT INTO friends (user_id, friend_id, confirmed) VALUES (?, ?, TRUE)";
-            jdbc.update(insertSql, userId, friendId);
-            jdbc.update(insertSql, friendId, userId);
-        } else {
-            String insertSql = "INSERT INTO friends (user_id, friend_id, confirmed) VALUES (?, ?, TRUE)";
-            jdbc.update(insertSql, friendId, userId);
+        if (count == null || count == 0) {
+            throw new ConditionsNotMetException("Заявка в друзья не найдена");
         }
+
+        String updateSql = "UPDATE friends SET confirmed = TRUE WHERE user_id = ? AND friend_id = ?";
+        jdbc.update(updateSql, userId, friendId);
+
+        String insertReverseSql = "INSERT INTO friends (user_id, friend_id, confirmed) VALUES (?, ?, TRUE)";
+        jdbc.update(insertReverseSql, friendId, userId);
 
         log.info("Дружба подтверждена между {} и {}", userId, friendId);
     }
@@ -107,12 +120,6 @@ public class JdbcFriendDbStorage implements FriendDbStorage {
     public boolean areFriends(Long userId1, Long userId2) {
         String sql = "SELECT COUNT(*) FROM friends WHERE user_id = ? AND friend_id = ? AND confirmed = TRUE";
         Integer count = jdbc.queryForObject(sql, Integer.class, userId1, userId2);
-        return count != null && count > 0;
-    }
-
-    private boolean hasPendingRequest(Long fromUserId, Long toUserId) {
-        String sql = "SELECT COUNT(*) FROM friends WHERE user_id = ? AND friend_id = ? AND confirmed = FALSE";
-        Integer count = jdbc.queryForObject(sql, Integer.class, fromUserId, toUserId);
         return count != null && count > 0;
     }
 
