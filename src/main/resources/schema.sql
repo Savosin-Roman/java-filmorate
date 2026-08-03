@@ -71,7 +71,7 @@ ALTER TABLE film_genres ADD FOREIGN KEY (genre_id) REFERENCES genres(genre_id) O
 -- Вставляем MPA рейтинги только если их нет
 INSERT INTO mpa_ratings (mpa_name)
 SELECT * FROM (VALUES
-    ('G'), ('PG'), ('PG_13'), ('R'), ('NC_17')
+    ('G'), ('PG'), ('PG-13'), ('R'), ('NC-17')
 ) AS vals(name)
 WHERE NOT EXISTS (SELECT 1 FROM mpa_ratings WHERE mpa_name = vals.name);
 

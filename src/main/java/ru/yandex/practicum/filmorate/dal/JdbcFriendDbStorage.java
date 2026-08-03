@@ -30,18 +30,16 @@ public class JdbcFriendDbStorage implements FriendDbStorage {
             throw new ConditionsNotMetException("Нельзя добавить самого себя в друзья");
         }
 
-        if (hasPendingRequest(friendId, userId)) {
-            confirmFriend(userId, friendId);
-            return;
-        }
-
+        // Проверяем, не друзья ли уже
         if (areFriends(userId, friendId)) {
             throw new ConditionsNotMetException("Пользователи уже являются друзьями");
         }
 
-        String sql = "INSERT INTO friends (user_id, friend_id, confirmed) VALUES (?, ?, FALSE)";
+        String sql = "INSERT INTO friends (user_id, friend_id, confirmed) VALUES (?, ?, TRUE)";
         jdbc.update(sql, userId, friendId);
-        log.info("Заявка в друзья создана: {} -> {}", userId, friendId);
+        jdbc.update(sql, friendId, userId);
+
+        log.info("Пользователи {} и {} стали друзьями", userId, friendId);
     }
 
     @Override

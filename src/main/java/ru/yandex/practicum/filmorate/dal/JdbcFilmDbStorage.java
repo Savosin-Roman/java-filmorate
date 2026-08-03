@@ -30,6 +30,24 @@ public class JdbcFilmDbStorage implements FilmDbStorage {
     public Film create(Film film) {
         log.info("Создание фильма в БД: {}", film.getName());
 
+        if (film.getMpa() != null && film.getMpa().getId() != null) {
+            String checkMpaSql = "SELECT COUNT(*) FROM mpa_ratings WHERE mpa_id = ?";
+            Integer count = jdbc.queryForObject(checkMpaSql, Integer.class, film.getMpa().getId());
+            if (count == null || count == 0) {
+                throw new NotFoundException("MPA с ID " + film.getMpa().getId() + " не найден");
+            }
+        }
+
+        if (film.getGenres() != null && !film.getGenres().isEmpty()) {
+            for (Genre genre : film.getGenres()) {
+                String checkGenreSql = "SELECT COUNT(*) FROM genres WHERE genre_id = ?";
+                Integer count = jdbc.queryForObject(checkGenreSql, Integer.class, genre.getId());
+                if (count == null || count == 0) {
+                    throw new NotFoundException("Жанр с ID " + genre.getId() + " не найден");
+                }
+            }
+        }
+
         String sql = "INSERT INTO films (name, description, release_date, duration, mpa_id) VALUES (?, ?, ?, ?, ?)";
         GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -54,7 +72,6 @@ public class JdbcFilmDbStorage implements FilmDbStorage {
 
         film.setId(id);
 
-        // Сохраняем жанры
         if (film.getGenres() != null && !film.getGenres().isEmpty()) {
             saveGenres(id, film.getGenres());
         }
@@ -64,9 +81,15 @@ public class JdbcFilmDbStorage implements FilmDbStorage {
     }
 
     private void saveGenres(Long filmId, List<Genre> genres) {
+        // Удаляем дубликаты по ID
+        List<Long> uniqueGenreIds = genres.stream()
+                .map(Genre::getId)
+                .distinct()
+                .toList();
+
         String sql = "INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)";
-        for (Genre genre : genres) {
-            jdbc.update(sql, filmId, genre.getId());
+        for (Long genreId : uniqueGenreIds) {
+            jdbc.update(sql, filmId, genreId);
         }
     }
 
