@@ -34,10 +34,11 @@ public class JdbcFriendDbStorage implements FriendDbStorage {
             throw new ConditionsNotMetException("Пользователи уже являются друзьями");
         }
 
-        String checkSql = "SELECT COUNT(*) FROM friends WHERE user_id = ? AND friend_id = ? AND confirmed = FALSE";
-        Integer pendingRequestCount = jdbc.queryForObject(checkSql, Integer.class, friendId, userId);
+        String checkReverseSql = "SELECT COUNT(*) FROM friends WHERE user_id = ? AND friend_id = ? AND confirmed = FALSE";
+        Integer reverseCount = jdbc.queryForObject(checkReverseSql, Integer.class, friendId, userId);
 
-        if (pendingRequestCount != null && pendingRequestCount > 0) {
+        if (reverseCount != null && reverseCount > 0) {
+            // Есть встречная заявка → подтверждаем дружбу
             confirmFriend(friendId, userId);
             return;
         }
@@ -84,13 +85,13 @@ public class JdbcFriendDbStorage implements FriendDbStorage {
         userStorage.findById(userId);
         userStorage.findById(friendId);
 
-        String sql = "DELETE FROM friends WHERE user_id = ? AND friend_id = ?";
-        int rowsDeleted = jdbc.update(sql, userId, friendId);
+        String sql = "DELETE FROM friends WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)";
+        int rowsDeleted = jdbc.update(sql, userId, friendId, friendId, userId);
 
         if (rowsDeleted == 0) {
             log.warn("Дружба не найдена между {} и {}", userId, friendId);
         } else {
-            log.info("Дружба удалена у {} с {}", userId, friendId);
+            log.info("Дружба удалена между {} и {}", userId, friendId);
         }
     }
 
@@ -100,7 +101,7 @@ public class JdbcFriendDbStorage implements FriendDbStorage {
 
         String sql = "SELECT u.* FROM users u " +
                 "JOIN friends f ON u.user_id = f.friend_id " +
-                "WHERE f.user_id = ?";
+                "WHERE f.user_id = ? AND f.confirmed = TRUE";
 
         return jdbc.query(sql, userRowMapper, userId);
     }
@@ -129,10 +130,13 @@ public class JdbcFriendDbStorage implements FriendDbStorage {
         userStorage.findById(userId2);
 
         String sql = "SELECT u.* FROM users u " +
-                "JOIN friends f1 ON u.user_id = f1.friend_id " +
-                "JOIN friends f2 ON u.user_id = f2.friend_id " +
-                "WHERE f1.user_id = ? AND f1.confirmed = TRUE " +
-                "AND f2.user_id = ? AND f2.confirmed = TRUE";
+                "WHERE u.user_id IN (" +
+                "    SELECT f1.friend_id FROM friends f1 " +
+                "    WHERE f1.user_id = ? AND f1.confirmed = TRUE " +
+                "    INTERSECT " +
+                "    SELECT f2.friend_id FROM friends f2 " +
+                "    WHERE f2.user_id = ? AND f2.confirmed = TRUE" +
+                ")";
 
         return jdbc.query(sql, userRowMapper, userId1, userId2);
     }
