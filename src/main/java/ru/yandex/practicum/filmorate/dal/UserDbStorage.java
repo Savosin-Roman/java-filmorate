@@ -6,11 +6,18 @@ import java.util.Optional;
 
 public interface UserDbStorage {
     User create(User user);
+
     User update(User newUser);
+
     User findById(Long id);
-    Optional<User> findUserById(Long id);  // ← Добавить этот метод
+
+    Optional<User> findUserById(Long id);
+
     void delete(Long id);
+
     List<User> findAll();
+
     List<User> getFriends(Long id);
+
     List<User> getCommonFriends(Long userId1, Long userId2);
 }
