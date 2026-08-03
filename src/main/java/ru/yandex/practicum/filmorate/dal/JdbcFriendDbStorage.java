@@ -129,13 +129,10 @@ public class JdbcFriendDbStorage implements FriendDbStorage {
         userStorage.findById(userId2);
 
         String sql = "SELECT u.* FROM users u " +
-                "WHERE u.user_id IN (" +
-                "    SELECT f1.friend_id FROM friends f1 " +
-                "    WHERE f1.user_id = ? AND f1.confirmed = TRUE " +
-                "    INTERSECT " +
-                "    SELECT f2.friend_id FROM friends f2 " +
-                "    WHERE f2.user_id = ? AND f2.confirmed = TRUE" +
-                ")";
+                "JOIN friends f1 ON u.user_id = f1.friend_id " +
+                "JOIN friends f2 ON u.user_id = f2.friend_id " +
+                "WHERE f1.user_id = ? AND f1.confirmed = TRUE " +
+                "AND f2.user_id = ? AND f2.confirmed = TRUE";
 
         return jdbc.query(sql, userRowMapper, userId1, userId2);
     }
