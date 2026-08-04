@@ -16,6 +16,7 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Repository
 @Slf4j
@@ -78,19 +79,6 @@ public class JdbcFilmDbStorage implements FilmDbStorage {
 
         log.info("Фильм создан с ID: {}", id);
         return findById(id);
-    }
-
-    private void saveGenres(Long filmId, List<Genre> genres) {
-        // Удаляем дубликаты по ID
-        List<Long> uniqueGenreIds = genres.stream()
-                .map(Genre::getId)
-                .distinct()
-                .toList();
-
-        String sql = "INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)";
-        for (Long genreId : uniqueGenreIds) {
-            jdbc.update(sql, filmId, genreId);
-        }
     }
 
     @Override
@@ -258,5 +246,26 @@ public class JdbcFilmDbStorage implements FilmDbStorage {
         } else {
             log.info("Лайк удален: фильм {}, пользователь {}", filmId, userId);
         }
+    }
+
+    private void saveGenres(Long filmId, List<Genre> genres) {
+        List<Long> uniqueGenreIds = genres.stream()
+                .map(Genre::getId)
+                .distinct()
+                .toList();
+
+        if (uniqueGenreIds.isEmpty()) {
+            return;
+        }
+
+        String sql = "INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)";
+
+        List<Object[]> batchArgs = uniqueGenreIds.stream()
+                .map(genreId -> new Object[]{filmId, genreId})
+                .collect(Collectors.toList());
+
+        jdbc.batchUpdate(sql, batchArgs);
+
+        log.debug("Сохранено {} жанров для фильма {}", uniqueGenreIds.size(), filmId);
     }
 }
